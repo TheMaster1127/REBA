@@ -7,16 +7,21 @@
 
 ---
 
-## 1. What to Expect (Runtime & Cost)
+## 1. Runtime & API Pricing
 
-* **Runtime:**
-  * Small, single-file binaries typically finish in **1–5 minutes**.
-  * Larger, stripped real-world binaries (multi-function utilities, static helpers, complex option parsers) can take **10–20 minutes—or even longer** depending on function count, retries, and API speed.
-* **API Cost:**
-  * Even long multi-pass runs are **very inexpensive**—typically a few cents for small targets and roughly **$0.10–$0.60 USD** on larger 50 KB+ binaries when using DeepSeek Flash.
-* **Test Before Spending Tokens:**
-  * **Do not start by throwing a massive binary at REBA and burning tokens.**
-  * First verify your local toolchain (`kuna`, `objdump`, `bwrap`, `gcc`) works without spending a single token, then write and compile a **tiny test binary yourself** (see [Section 4](#4-how-to-test-first-without-wasting-tokens)) to make sure everything works end-to-end on your system.
+### How Long Does a Run Take?
+* **Small / Single-File Binaries:** Typically **a few minutes** (around 1–5 minutes).
+* **Larger / Multi-Chunk Binaries:** Can take anywhere from **10 to 20 minutes, or even more** depending on function count, compiler retries, and API response speed.
+
+### API Pricing *(as of November 20, 2026)*
+> *Note: API pricing below reflects DeepSeek rates **as of November 20, 2026**, and may change in the future when you are reading this.*
+
+REBA is **not super expensive**, especially when using the **DeepSeek Flash** model (`deepseek-flash`):
+* **Small binaries:** Typically cost around **8–10 cents** (or slightly more depending on retries).
+* **Larger binaries** *(like `/usr/bin/hostname` or bigger multi-function binaries)*: Expect it to cost more—anywhere up to **around $1 USD, or potentially even more** for very large targets or multi-pass runs.
+* **Starter Tip:** If you have never used the DeepSeek API before, putting **3 bucks ($3)** on your account is plenty to get started and run several tests safely without worrying about burning through money.
+
+> **Recommendation:** Don't immediately spend your tokens on a huge binary. First verify your local tools work (0 API calls), then write a tiny C program, compile it yourself, and run REBA on that first to make sure everything works smoothly on your machine.
 
 ---
 
@@ -81,7 +86,7 @@ sudo dnf install -y python3 python3-pip python3-capstone binutils file gcc gcc-c
 
 ---
 
-## 4. How to Test First (Without Wasting Tokens)
+## 4. How to Test First (Before Spending Tokens)
 
 Before running REBA on a large binary, make sure your local setup works cleanly:
 
@@ -106,18 +111,18 @@ python3 htre_cli.py /tmp/smoke --stdout | head -n 40
 python3 the_oracle.py /tmp/smoke /tmp/smoke
 ```
 
-### Step 2: Configure Your API Key & Run a Small Test
+### Step 2: Configure Your API Key & Run Your Small Test Binary
 ```bash
 echo "sk-your-deepseek-api-key" > api_key.txt
 python3 reba.py /tmp/smoke
 ```
-If `/tmp/smoke` builds inside Bubblewrap, runs Stage 1 + Stage 2 verification, and finishes cleanly (usually ~1–2 minutes and under $0.01), your environment is 100% functional and ready for real targets.
+If `/tmp/smoke` builds inside Bubblewrap, passes Stage 1 + Stage 2 verification, and finishes cleanly, your environment is functional and ready for real targets.
 
 ### Troubleshooting & Reporting Issues
 If something fails on your machine:
 * Inspect the logs inside `.reba_history/<binary>_<timestamp>/` (`session.log`, `timeline.txt`, `00_extraction/htre_cmd_and_stderr.log`, and `iter_XX/candidates/*_compile.log`).
-* Run diagnostic checks (`kuna --version`, `bwrap --version`, `gcc --version`, `python3 htre_cli.py <your_binary> --list-funcs`).
-* Open a GitHub Issue describing what went wrong along with those command outputs and log excerpts so we can reproduce and fix it.
+* Gather diagnostic command outputs (`kuna --version`, `bwrap --version`, `gcc --version`, `python3 htre_cli.py /path/to/your_binary --list-funcs`).
+* Open a GitHub Issue describing everything that went wrong along with those logs and command outputs so it can be investigated and fixed.
 
 ---
 
@@ -141,7 +146,7 @@ python3 reba.py /path/to/your_binary --skip-feasibility
 ```
 
 ### Packaging From Any of Your Past Runs (`manual_build.sh`)
-After you run `reba.py` on a binary, its sessions are saved in `.reba_history/`. You can rebuild and package the winning (or highest-scoring) attempt from any of your completed or interrupted runs into a standalone `Makefile` project folder:
+After you run `reba.py` on a binary, its sessions are saved in `.reba_history/`. You can rebuild and package the winning (or highest-scoring) attempt from any of your completed or interrupted runs into a clean `Makefile` project folder:
 ```bash
 chmod +x manual_build.sh
 
