@@ -1,0 +1,49 @@
+# Secrets & API Keys (NEVER commit!)
+api_key.txt
+*.key
+.env
+.env.*
+
+# REBA runtime caches, sessions & outputs
+.htre_cache/
+.reba_checkpoints/
+.reba_history/
+.reba_originals/
+.reba_outputs/
+ghidra_projects/
+cfg_exports/
+
+# Rebuilt output directories
+rebuilt_*/
+final_*/
+
+# Temp compiler / oracle artifacts
+*.o
+*.obj
+*.out
+a.out
+reba_cand_*_out
+reba_out
+reba_src.*
+standalone_*
+*.htre_report.txt
+
+hostname
+calc_hard
+cpp_test
+dc
+htre_cli_old.py
+reba_old.py
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+
+# Editors & OS
+*.swp
+*.swo
+*~
+.DS_Store

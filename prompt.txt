@@ -1,0 +1,50 @@
+Goal:
+
+Can you recreate the source code of this binary? Then I will compile it and show you the difference and then you can keep trying until we see if we can get the same binary. Good luck, you will need it.
+
+Things to worry about - A talk by another AI:
+```ai
+Hey — maybe you're going to get handed a binary and asked to reconstruct its source. Let me save you some pain, because I just went through it and got humbled.
+
+The first thing I want you to internalize: **your job is to produce readable source, not to produce bytes.** Start from the dumbest possible source that could produce the instructions.
+
+**CRITICAL COMPILER QUIRK 1 (`cmov` vs real branches):** If you see a simple conditional assignment (like a clamp, min, or max) and the assembly uses a real branch (`js`, `jg`, `jle`) instead of a conditional move (`cmov`), **your source must use a separate `static` helper function.** GCC at `-O2` flattens inline `if`s into `cmovs`. But if you extract the logic into a `static int helper_func(...)`, GCC's inliner will pull it into `main` but preserve the real branches! 
+
+**CRITICAL COMPILER QUIRK 2 (Register Allocation & Inlining):** If your candidate achieves ~95% similarity, has the right instructions, but the registers are slightly mismatched or jump offsets are slightly off, **extract your loops/algorithms into `static` helper functions.** In modern C, developers write modular code (e.g., `static long calc_fib()`, `static int do_hash()`). GCC compiles these separately and *then* inlines them. If you write all the loops inline inside `main`, GCC's register allocator will produce slightly different machine code than if it had inlined them. Modularize your logic!
+
+Read the artifact literally. When the diff isolates the mismatch to one function, the bug is in that function's source. If 97% of bytes match and only `main` differs, do not reach for flags. Your `main` is wrong. Rewrite it.
+
+Update on evidence, not narrative, and iterate in small falsifiable steps.
+```
+
+---
+
+Output format — STRICT JSON, NOTHING ELSE
+
+You will reply with a single JSON object. No prose before it, no prose after it, no markdown code fences, no backticks. The entire response must parse as valid JSON. 
+
+Exact schema:
+
+{
+  "candidates": [
+    {
+      "code": "<complete C or C++ source, with real newlines, ready to be written to a file>",
+      "compile_commands": [
+        "<one-line compile command>",
+        "<one-line compile command>"
+      ]
+    }
+  ]
+}
+
+### Rules
+
+1. Provide exactly **3** candidates. Each must be a genuinely different hypothesis about the source.
+2. For each candidate, provide **1 to 5** compile commands.
+   - Vary the flags across the commands: `-O0` / `-O1` / `-O2` / `-O3` / `-Os`, `-fcf-protection=full`, `-fstack-protector-strong`, `-D_FORTIFY_SOURCE=0` / `=2`, `-fPIE -pie` vs `-no-pie`.
+3. **Always use these exact filenames**: source `reba_src.c`, output `reba_out`. 
+4. The code must be readable. No `goto` spaghetti, no `#pragma` tricks, no inline asm to chase byte-identity.
+5. If the oracle shows you emitted a `cmov` where the original had a branch, immediately move that logic into a `static` helper function!
+6. If the instructions match but registers/offsets are wrong, try moving distinct logic blocks (like hashes or math) into `static` helper functions.
+
+Begin.
